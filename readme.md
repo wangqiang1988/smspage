@@ -25,3 +25,5 @@ python app.py
 ```
 
 默认运行地址：http://0.0.0.0:5000
+# 后台运行并把日志记录到 output.log
+nohup python3 app.py > output.log 2>&1 &
