@@ -1,0 +1,4 @@
+__pycache__/
+config_env.*
+env/
+sms_data*
