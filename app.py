@@ -63,20 +63,6 @@ def generate():
     add_new_user(new_id)
     return redirect(url_for('dashboard', user_id=new_id))
 
-@app.route('/<user_id>')
-@limiter.limit("30 per minute") 
-def dashboard(user_id):
-    with sqlite3.connect(DB_FILE) as conn:
-        user = conn.execute("SELECT uuid FROM users WHERE uuid = ?", (user_id,)).fetchone()
-    if not user:
-        return "地址无效或已过期", 404
-    
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.execute("SELECT sender, content, time FROM messages WHERE user_id = ? ORDER BY id DESC", (user_id,))
-        history = [{"sender": r[0], "content": r[1], "time": r[2]} for r in cursor.fetchall()]
-        
-    return render_template_string(DASHBOARD_TEMPLATE, user_id=user_id, history=history)
-
 
 
 
@@ -212,13 +198,23 @@ DASHBOARD_TEMPLATE = """
 """
 
 @app.route('/sms/<user_id>', methods=['POST'])
-@limiter.limit("10 per minute") 
-def receive_sms(user_id):
+@app.route('/<user_id>', methods=['GET', 'POST']) # 这里必须包含 GET
+@limiter.limit("30 per minute") 
+def unified_handler(user_id):
+    # 1. 验证用户是否存在
     with sqlite3.connect(DB_FILE) as conn:
         user = conn.execute("SELECT uuid FROM users WHERE uuid = ?", (user_id,)).fetchone()
     if not user:
-        return jsonify({"status": "forbidden"}), 403
-    
+        return "地址无效或已过期", 404
+
+    # 2. 如果是 GET 请求：返回看板页面 (原 dashboard 逻辑)
+    if request.method == 'GET':
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.execute("SELECT sender, content, time FROM messages WHERE user_id = ? ORDER BY id DESC", (user_id,))
+            history = [{"sender": r[0], "content": r[1], "time": r[2]} for r in cursor.fetchall()]
+        return render_template_string(DASHBOARD_TEMPLATE, user_id=user_id, history=history)
+
+    # 3. 如果是 POST 请求：保存短信 (原 receive_sms 逻辑)
     data = request.json
     if not data or 'content' not in data:
         return jsonify({"status": "invalid_data"}), 400
@@ -232,7 +228,6 @@ def receive_sms(user_id):
     save_message(user_id, new_entry['sender'], new_entry['content'], new_entry['time'])
     socketio.emit('new_sms', new_entry, room=user_id)
     return jsonify({"status": "ok"}), 200
-
 
 @app.errorhandler(429)
 def ratelimit_handler(e):
