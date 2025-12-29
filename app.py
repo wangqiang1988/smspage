@@ -168,7 +168,7 @@ DASHBOARD_TEMPLATE = """
     <script>
         const user_id = "{{ user_id }}";
         const base = window.location.origin;
-        document.getElementById('post-url').innerText = base + "/sms/" + user_id;
+        document.getElementById('post-url').innerText = window.location.href;
         document.getElementById('get-url').innerText = window.location.href;
 
         function copyText(id) {
