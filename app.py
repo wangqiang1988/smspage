@@ -56,12 +56,14 @@ def save_message(user_id, sender, content, time_str):
 def home():
     return render_template_string(HOME_TEMPLATE)
 
+
 @app.route('/generate')
 @limiter.limit("5 per hour") 
 def generate():
     new_id = str(uuid.uuid4()).replace('-', '')[:16] 
     add_new_user(new_id)
-    return redirect(url_for('dashboard', user_id=new_id))
+    # 将 'dashboard' 改为 'unified_handler'
+    return redirect(url_for('unified_handler', user_id=new_id))
 
 
 
