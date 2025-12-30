@@ -4,7 +4,8 @@ services:
     ports:
       - "5003:5000"
     volumes:
-      - .:/app
+      - ./:/app
     environment:
       - FLASK_ENV=development
+      - TZ=Asia/Shanghai
     restart: always
