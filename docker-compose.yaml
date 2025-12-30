@@ -2,7 +2,7 @@ services:
   web-app:
     build: .
     ports:
-      - "5003:5000"
+      - "5000:5000"
     volumes:
       - ./:/app
     environment:
